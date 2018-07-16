@@ -250,7 +250,7 @@ proc dbedit-form-widget {table field type val} {
         }
         default {
             # custom types should implement their own procedure
-            dbedit-form-$type-widget $table $field $type $val
+            dbedit-form-$type-widget $table $field $val
         }
     }
     wapp-trim {
@@ -260,7 +260,7 @@ proc dbedit-form-widget {table field type val} {
 }
 
 
-proc dbedit-form-select2-widget {table field type val} {
+proc dbedit-form-select2-widget {table field val} {
     set field [string tolower $field]
     set table [string tolower $table]
     wapp-trim {
