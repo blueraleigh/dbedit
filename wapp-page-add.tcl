@@ -26,7 +26,7 @@ proc wapp-page-add {} {
     dbedit-header
     set tbl_name [wapp-param PATH_TAIL]
     set id [wapp-param rowid NA]
-    lassign [dbedit-form-fields $tbl_name add] fields widgets
+    lassign [dbedit-form-fields $tbl_name add] fields widgets fieldsets
     # If the $id variable does not equal NA,
     # the save button was pressed and we need
     # to handle the POST'ed data.
@@ -52,18 +52,34 @@ proc wapp-page-add {} {
         dbedit-footer
         return
     }
+    set cfs [lindex $fieldsets 0]
     wapp-trim {
         <div id="content-main">
         <form method="POST" id='%html($tbl_name)_form'>
         <div>
         <fieldset class="module aligned">
+    }
+    if {$cfs != ""} {
+        wapp-subst {<h2>%html($cfs)</h2>}
+    }
+    wapp-trim {
         <div class="form-row hidden">
         <div class="field-box hidden">
         <input type="hidden" name="rowid" value=''>
         </div>
         </div>
     }
-    foreach field [split $fields ","] type $widgets {
+    foreach field [split $fields ","] type $widgets fieldset $fieldsets {
+        if {$fieldset != $cfs} {
+            set cfs $fieldset
+            wapp-trim {
+                </fieldset>
+                <fieldset class="module aligned">
+            }
+            if {$cfs != ""} {
+                wapp-subst {<h2>%html($cfs)</h2>}
+            }
+        }
         dbedit-form-widget $tbl_name $field $type ''
     }
     wapp-trim {

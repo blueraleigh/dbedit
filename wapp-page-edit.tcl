@@ -27,7 +27,7 @@ proc wapp-page-edit {} {
     dbedit-header
     lassign [split [wapp-param PATH_TAIL] "/"] tbl_name rowid
     set id [wapp-param rowid]
-    lassign [dbedit-form-fields $tbl_name edit] fields widgets
+    lassign [dbedit-form-fields $tbl_name edit] fields widgets fieldsets
     # If the $id variable has a value that means
     # the save button was pressed and we need
     # to handle the POST'ed data.
@@ -53,11 +53,15 @@ proc wapp-page-edit {} {
         dbedit-footer
         return
     }
+    set cfs [lindex $fieldsets 0]
     wapp-trim {
         <div id="content-main">
         <form method="POST" id='%html($tbl_name)_form'>
         <div>
         <fieldset class="module aligned">
+    }
+    if {$cfs != ""} {
+        wapp-subst {<h2>%html($cfs)</h2>}
     }
     db eval "SELECT rowid,$fields FROM $tbl_name WHERE rowid=$rowid" result {
         set pk [lindex $result(*) 0]
@@ -69,7 +73,17 @@ proc wapp-page-edit {} {
             </div>
             </div>
         }
-        foreach field [split $fields ","] type $widgets {
+        foreach field [split $fields ","] type $widgets fieldset $fieldsets {
+            if {$fieldset != $cfs} {
+                set cfs $fieldset
+                wapp-trim {
+                    </fieldset>
+                    <fieldset class="module aligned">
+                }
+                if {$cfs != ""} {
+                    wapp-subst {<h2>%html($cfs)</h2>}
+                }
+            }
             set val $result($field)
             dbedit-form-widget $tbl_name $field $type $val
         }

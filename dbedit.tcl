@@ -180,6 +180,7 @@ proc dbedit-form-fields {tbl_name context} {
                 ORDER BY idx" result {
                 lappend fields $result(field)
                 lappend widgets $result(${context}_widget)
+                lappend fieldsets $result(fieldset)
             }
         } else {
             db eval "PRAGMA table_info($tbl_name)" {
@@ -188,6 +189,7 @@ proc dbedit-form-fields {tbl_name context} {
                 } else {
                     lappend fields $name
                     lappend widgets $type
+                    lappend fieldsets ""
                 }
             }
         }
@@ -198,10 +200,11 @@ proc dbedit-form-fields {tbl_name context} {
             } else {
                 lappend fields $name
                 lappend widgets $type
+                lappend fieldsets ""
             }
         }
     }
-    return [list [join $fields ","] $widgets]
+    return [list [join $fields ","] $widgets $fieldsets]
 }
 
 
