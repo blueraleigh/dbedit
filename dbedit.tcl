@@ -269,8 +269,16 @@ proc dbedit-form-select2-widget {table field val} {
             data-ajax--url="%url(/autocomplete/$table/$field)"
             data-ajax--theme="admin-autocomplete"
             data-allow-clear="true"
-            data-placeholder="">
+            data-placeholder=""
     }
+    db eval "SELECT forward FROM dbedit_autocompletefields
+             WHERE source_tbl LIKE '$table' AND source_field LIKE '$field'" {}
+    foreach {src trg} $forward {
+        wapp-subst {
+            data-forward--%html($trg)="%html($src)_id"
+        }
+    }
+    wapp-subst {>}
     if {$val != ""} {
         db eval "
             SELECT target_tbl,target_value,target_displ

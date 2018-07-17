@@ -8,7 +8,8 @@ proc dbedit-config {} {
             target_tbl      TEXT,    -- the table to which foreign key points
             source_field    TEXT,    -- the field in the source table from which the foreign key originates
             target_value    TEXT,    -- the field in the reference table to which the foreign key points
-            target_displ    TEXT     -- the field in the reference table to search against and to display in the form widget
+            target_displ    TEXT,    -- the field in the reference table to search against and to display in the form widget
+            forward         TEXT     -- field from the source table to pass through filter field in the reference table. i.e. source_field filter_field
         );
         CREATE TRIGGER IF NOT EXISTS delete_autocompletefield_add_trig
         AFTER DELETE ON dbedit_autocompletefields

@@ -4,4 +4,6 @@ These are the static files from admin component of Django 2.0.2.
 They are unmodified except for the web font file names, which were
 changed to lowercase. I also added the favicon directory and
 favicon.png file. In forms.css I add the .submit-row p.copylink*
-rules beginning on line 284.
+rules beginning on line 284. Additionally I modified autocomplete.js
+by adding the getForward function and passing a forward param with
+the ajax call.

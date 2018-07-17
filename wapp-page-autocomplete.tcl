@@ -23,6 +23,13 @@ proc wapp-page-autocomplete {} {
     lassign [split [wapp-param PATH_TAIL] "/"] tbl_name field
     set q [wapp-param term]
     set page [wapp-param page 1]
+    set forward [split [wapp-param forward] "|"]
+    if {[llength $forward] == 2 && [lindex $forward 0] != ""} {
+        foreach {i j} $forward {
+            set source_filter $i
+            set target_link $j
+        }
+    }
     set offset 0
     if {$page > 1} {
         set offset [expr {20 * ($page-1)}]
@@ -32,12 +39,23 @@ proc wapp-page-autocomplete {} {
         FROM dbedit_autocompletefields
         WHERE source_tbl LIKE '$tbl_name' AND source_field LIKE '$field'" {}
     if {$q == ""} {
-        db eval "
-            SELECT
-                t.$target_value,t.$target_displ,c.rowcount
-            FROM $target_tbl AS t, (
-                SELECT COUNT(*) rowcount FROM $target_tbl) AS c
-            LIMIT 20 OFFSET $offset" result {
+        if {[info exists source_filter]} {
+            set sql "
+                SELECT
+                    t.$target_value,t.$target_displ,c.rowcount
+                FROM $target_tbl AS t, (
+                    SELECT COUNT(*) rowcount FROM $target_tbl WHERE $target_link='$source_filter') AS c
+                WHERE t.$target_link='$source_filter'
+                LIMIT 20 OFFSET $offset"
+        } else {
+            set sql "
+                SELECT
+                    t.$target_value,t.$target_displ,c.rowcount
+                FROM $target_tbl AS t, (
+                    SELECT COUNT(*) rowcount FROM $target_tbl) AS c
+                LIMIT 20 OFFSET $offset"
+        }
+        db eval $sql result {
             set v $result($target_value)
             set d $result($target_displ)
             wapp-unsafe "{"
@@ -47,14 +65,26 @@ proc wapp-page-autocomplete {} {
         }
         wapp-set-param .reply [string trimright [wapp-param .reply] ,]
     } else {
-        db eval "
-            SELECT
-                t.$target_value,t.$target_displ,c.rowcount
-            FROM $target_tbl AS t, (
-                SELECT COUNT(*) AS rowcount FROM $target_tbl WHERE $target_displ LIKE '$q%') AS c
-            WHERE t.$target_displ LIKE '$q%'
-            ORDER BY t.$target_displ='$q' DESC, t.$target_displ LIKE '$q%' DESC
-            LIMIT 20 OFFSET $offset" result {
+        if {[info exists source_filter]} {
+            set sql "
+                SELECT
+                    t.$target_value,t.$target_displ,c.rowcount
+                FROM $target_tbl AS t, (
+                    SELECT COUNT(*) AS rowcount FROM $target_tbl WHERE $target_link='$source_filter' AND $target_displ LIKE '$q%') AS c
+                WHERE t.$target_link='$source_filter' AND t.$target_displ LIKE '$q%'
+                ORDER BY t.$target_displ='$q' DESC, t.$target_displ LIKE '$q%' DESC
+                LIMIT 20 OFFSET $offset"
+        } else {
+            set sql "
+                SELECT
+                    t.$target_value,t.$target_displ,c.rowcount
+                FROM $target_tbl AS t, (
+                    SELECT COUNT(*) AS rowcount FROM $target_tbl WHERE $target_displ LIKE '$q%') AS c
+                WHERE t.$target_displ LIKE '$q%'
+                ORDER BY t.$target_displ='$q' DESC, t.$target_displ LIKE '$q%' DESC
+                LIMIT 20 OFFSET $offset"
+        }
+        db eval $sql result {
             set v $result($target_value)
             set d $result($target_displ)
             wapp-unsafe "{"

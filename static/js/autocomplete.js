@@ -1,12 +1,27 @@
 (function($) {
     'use strict';
+    var getForward = function($element) {
+        var forward = [];
+        var data = $element.data();
+        for (var key in data) {
+            if (key.startsWith("forward-")) {
+                var target = key.slice(8);
+                var source = $("#" + data[key]).val();
+                forward.push(source);
+                forward.push(target.toLowerCase());
+            }
+        }
+        return forward.join("|");
+    };
+
     var init = function($element, options) {
         var settings = $.extend({
             ajax: {
                 data: function(params) {
                     return {
                         term: params.term,
-                        page: params.page
+                        page: params.page,
+                        forward: getForward($element)
                     };
                 }
             }
