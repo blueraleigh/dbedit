@@ -27,7 +27,7 @@ proc wapp-page-autocomplete {} {
     if {[llength $forward] == 2 && [lindex $forward 0] != ""} {
         foreach {i j} $forward {
             set source_filter $i
-            set target_link $j
+            set target_filter $j
         }
     }
     set offset 0
@@ -38,62 +38,61 @@ proc wapp-page-autocomplete {} {
         SELECT target_tbl,target_value,target_displ
         FROM dbedit_autocompletefields
         WHERE source_tbl LIKE '$tbl_name' AND source_field LIKE '$field'" {}
-    if {$q == ""} {
+    if {[llength [info procs $tbl_name-autocomplete-$field]] == 1} {
         if {[info exists source_filter]} {
-            set sql "
-                SELECT
-                    t.$target_value,t.$target_displ,c.rowcount
-                FROM $target_tbl AS t, (
-                    SELECT COUNT(*) rowcount FROM $target_tbl WHERE $target_link='$source_filter') AS c
-                WHERE t.$target_link='$source_filter'
-                LIMIT 20 OFFSET $offset"
+            set sql [$tbl_name-autocomplete-$field $q $source_filter $offset]
         } else {
-            set sql "
-                SELECT
-                    t.$target_value,t.$target_displ,c.rowcount
-                FROM $target_tbl AS t, (
-                    SELECT COUNT(*) rowcount FROM $target_tbl) AS c
-                LIMIT 20 OFFSET $offset"
+            set sql [$tbl_name-autocomplete-$field $q "" $offset]
         }
-        db eval $sql result {
-            set v $result($target_value)
-            set d $result($target_displ)
-            wapp-unsafe "{"
-            wapp-subst {"id": "%string($v)",}
-            wapp-subst {"text": "%string($d)"}
-            wapp-unsafe "},"
-        }
-        wapp-set-param .reply [string trimright [wapp-param .reply] ,]
     } else {
-        if {[info exists source_filter]} {
-            set sql "
-                SELECT
-                    t.$target_value,t.$target_displ,c.rowcount
-                FROM $target_tbl AS t, (
-                    SELECT COUNT(*) AS rowcount FROM $target_tbl WHERE $target_link='$source_filter' AND $target_displ LIKE '$q%') AS c
-                WHERE t.$target_link='$source_filter' AND t.$target_displ LIKE '$q%'
-                ORDER BY t.$target_displ='$q' DESC, t.$target_displ LIKE '$q%' DESC
-                LIMIT 20 OFFSET $offset"
+        if {$q == ""} {
+            if {[info exists source_filter]} {
+                set sql "
+                    SELECT
+                        t.$target_value,t.$target_displ,c.rowcount
+                    FROM $target_tbl AS t, (
+                        SELECT COUNT(*) rowcount FROM $target_tbl WHERE $target_filter='$source_filter') AS c
+                    WHERE t.$target_filter='$source_filter'
+                    LIMIT 20 OFFSET $offset"
+            } else {
+                set sql "
+                    SELECT
+                        t.$target_value,t.$target_displ,c.rowcount
+                    FROM $target_tbl AS t, (
+                        SELECT COUNT(*) rowcount FROM $target_tbl) AS c
+                    LIMIT 20 OFFSET $offset"
+            }
         } else {
-            set sql "
-                SELECT
-                    t.$target_value,t.$target_displ,c.rowcount
-                FROM $target_tbl AS t, (
-                    SELECT COUNT(*) AS rowcount FROM $target_tbl WHERE $target_displ LIKE '$q%') AS c
-                WHERE t.$target_displ LIKE '$q%'
-                ORDER BY t.$target_displ='$q' DESC, t.$target_displ LIKE '$q%' DESC
-                LIMIT 20 OFFSET $offset"
+            if {[info exists source_filter]} {
+                set sql "
+                    SELECT
+                        t.$target_value,t.$target_displ,c.rowcount
+                    FROM $target_tbl AS t, (
+                        SELECT COUNT(*) AS rowcount FROM $target_tbl WHERE $target_filter='$source_filter' AND $target_displ LIKE '$q%') AS c
+                    WHERE t.$target_filter='$source_filter' AND t.$target_displ LIKE '$q%'
+                    ORDER BY t.$target_displ='$q' DESC, t.$target_displ LIKE '$q%' DESC
+                    LIMIT 20 OFFSET $offset"
+            } else {
+                set sql "
+                    SELECT
+                        t.$target_value,t.$target_displ,c.rowcount
+                    FROM $target_tbl AS t, (
+                        SELECT COUNT(*) AS rowcount FROM $target_tbl WHERE $target_displ LIKE '$q%') AS c
+                    WHERE t.$target_displ LIKE '$q%'
+                    ORDER BY t.$target_displ='$q' DESC, t.$target_displ LIKE '$q%' DESC
+                    LIMIT 20 OFFSET $offset"
+            }
         }
-        db eval $sql result {
-            set v $result($target_value)
-            set d $result($target_displ)
-            wapp-unsafe "{"
-            wapp-subst {"id": "%string($v)",}
-            wapp-subst {"text": "%string($d)"}
-            wapp-unsafe "},"
-        }
-        wapp-set-param .reply [string trimright [wapp-param .reply] ,]
     }
+    db eval $sql result {
+        set v $result($target_value)
+        set d $result($target_displ)
+        wapp-unsafe "{"
+        wapp-subst {"id": "%string($v)",}
+        wapp-subst {"text": "%string($d)"}
+        wapp-unsafe "},"
+    }
+    wapp-set-param .reply [string trimright [wapp-param .reply] ,]
     wapp-unsafe "\], \"pagination\": {\"more\": "
     if {[array size result] == 1} {
         wapp-unsafe "false"
