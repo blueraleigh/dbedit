@@ -247,8 +247,14 @@ proc dbedit-form-widget {table field type val} {
             }
         }
         textarea {
-            wapp-trim {
-                <textarea rows="10" cols="100" id='%unsafe($field)_id' name='%unsafe($field)'>%unsafe($val)</textarea>
+            if {$val == "" || $val == "''"} {
+                wapp-trim {
+                    <textarea rows="10" cols="100" id='%unsafe($field)_id' name='%unsafe($field)'></textarea>
+                }
+            } else {
+                wapp-trim {
+                    <textarea rows="10" cols="100" id='%unsafe($field)_id' name='%unsafe($field)'>%unsafe($val)</textarea>
+                }
             }
         }
         default {
