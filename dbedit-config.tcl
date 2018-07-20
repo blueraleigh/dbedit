@@ -32,7 +32,7 @@ proc dbedit-config {} {
         CREATE TABLE IF NOT EXISTS dbedit_listfields (
             tbl_name TEXT,     -- the table name
             field    TEXT,     -- the field name
-            idx      TEXT      -- the column display index. a negative number means hide.
+            idx      INTEGER   -- the column display index. a negative number means hide.
         )
     }
     db eval {
@@ -42,7 +42,7 @@ proc dbedit-config {} {
             add_widget  TEXT,    -- the type of widget to use in the form field when adding a new record
             edit_widget TEXT,    -- the type of widget to use in the form field when editing an existing record
             fieldset    TEXT,    -- the fieldset is a group name to identify related fields.
-            idx         TEXT     -- the form display index. a negative number means hide.
+            idx         INTEGER  -- the form display index. a negative number means hide.
         );
         CREATE TRIGGER IF NOT EXISTS update_formfield_add_trig
         BEFORE UPDATE OF add_widget ON dbedit_formfields
