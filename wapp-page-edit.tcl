@@ -38,7 +38,12 @@ proc wapp-page-edit {} {
             # implicitly convert the values to the appropriate storage class
             # base on column type affinity (if it is possible, otherwise it
             # will store the value as TEXT).
-            lappend vals "$field = '[wapp-param $field]'"
+            set fieldval [wapp-param $field]
+            if {$fieldval != ""} {
+                lappend vals "$field = '$fieldval'"
+            } else {
+                lappend vals "$field = NULL"
+            }
         }
         set vals [join $vals ","]
         if {[catch {db eval "UPDATE $tbl_name SET $vals WHERE rowid=$id"} msg]} {

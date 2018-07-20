@@ -37,7 +37,12 @@ proc wapp-page-add {} {
             # implicitly convert the values to the appropriate storage class
             # base on column type affinity (if it is possible, otherwise it
             # will store the value as TEXT).
-            lappend vals "'[wapp-param $field]'"
+            set fieldval [wapp-param $field]
+            if {$fieldval != ""} {
+                lappend vals "'$fieldval'"
+            } else {
+                lappend vals NULL
+            }
         }
         set vals [join $vals ","]
         if {[catch {db eval "INSERT INTO $tbl_name ($fields) VALUES ($vals)"} msg]} {
