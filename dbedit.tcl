@@ -32,6 +32,7 @@ source $DBEDIT_ROOT/wapp-page-add.tcl
 source $DBEDIT_ROOT/wapp-page-delete.tcl
 source $DBEDIT_ROOT/wapp-page-copy.tcl
 source $DBEDIT_ROOT/wapp-page-query.tcl
+source $DBEDIT_ROOT/wapp-page-backup.tcl
 source $DBEDIT_ROOT/wapp-page-autocomplete.tcl
 source $DBEDIT_ROOT/wapp.tcl
 
@@ -102,6 +103,7 @@ proc dbedit-style-start {} {
         <h1 id="site-name">DBedit administration</h1>
         </div>
         <div id="user-tools">
+        <a href="/backup">Backup</a>&nbsp;&nbsp;&nbsp;
         <a href="/query">Query</a>
         </div>
         </div>
