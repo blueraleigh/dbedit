@@ -40,6 +40,7 @@ proc wapp-page-edit {} {
             # will store the value as TEXT).
             set fieldval [wapp-param $field]
             if {$fieldval != ""} {
+                set fieldval [string map {' ''} $fieldval]
                 lappend vals "$field = '$fieldval'"
             } else {
                 lappend vals "$field = NULL"
