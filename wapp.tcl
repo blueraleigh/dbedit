@@ -16,8 +16,7 @@
 #
 #   (2)  Indentifiers intended for internal use only begin with "wappInt"
 #
-
-# checkin version: 43323e55a962200a
+package require Tcl 8.6
 
 # Add text to the end of the HTTP reply.  No interpretation or transformation
 # of the text is performs.  The argument should be enclosed within {...}
@@ -58,14 +57,37 @@ proc wapp-unsafe {txt} {
 #     %string(...)        Escape text for use within a JSON string
 #     %unsafe(...)        No transformations of the text
 #
+# The substitutions above terminate at the first ")" character.  If the
+# text of the TCL string in ... contains ")" characters itself, use instead:
+#
+#     %html%(...)%
+#     %url%(...)%
+#     %qp%(...)%
+#     %string%(...)%
+#     %unsafe%(...)%
+#
+# In other words, use "%(...)%" instead of "(...)" to include the TCL string
+# to substitute.
+#
 # The %unsafe substitution should be avoided whenever possible, obviously.
 # In addition to the substitutions above, the text also does backslash
 # escapes.
 #
 proc wapp-subst {txt} {
   global wapp
-  regsub -all {%(html|url|qp|string|unsafe)\(([^)]+)\)} $txt \
-         {[wappInt-enc-\1 "\2"]} txt
+  regsub -all {%(html|url|qp|string|unsafe){1,1}?(|%)\((.+)\)\2} $txt \
+         {[wappInt-enc-\1 "\3"]} txt
+  dict append wapp .reply [uplevel 1 [list subst -novariables $txt]]
+}
+
+# Works like wapp-subst, but also removes whitespace from the beginning
+# of lines.
+#
+proc wapp-trim {txt} {
+  global wapp
+  regsub -all {\n\s+} [string trim $txt] \n txt
+  regsub -all {%(html|url|qp|string|unsafe){1,1}?(|%)\((.+)\)\2} $txt \
+         {[wappInt-enc-\1 "\3"]} txt
   dict append wapp .reply [uplevel 1 [list subst -novariables $txt]]
 }
 
@@ -82,13 +104,15 @@ proc wapp-subst {txt} {
 #                               value of a query parameter in a URL or in
 #                               post data or in a cookie.
 #
-#    wappInt-enc-string         Escape ", ', and \ for using inside of a
-#                               javascript string literal.
+#    wappInt-enc-string         Escape ", ', \, and < for using inside of a
+#                               javascript string literal.  The < character
+#                               is escaped to prevent "</script>" from causing
+#                               problems in embedded javascript.
 #
 #    wappInt-enc-unsafe         Perform no encoding at all.  Unsafe.
 #
 proc wappInt-enc-html {txt} {
-  return [string map {& &amp; < &lt; > &gt;} $txt]
+  return [string map {& &amp; < &lt; > &gt; \" &quot; \\ &#92;} $txt]
 }
 proc wappInt-enc-unsafe {txt} {
   return $txt
@@ -112,18 +136,7 @@ proc wappInt-enc-qp {s} {
   return $s
 }
 proc wappInt-enc-string {s} {
-  return [string map {\\ \\\\ \" \\\" ' \\'} $s]
-}
-
-# Works like wapp-subst, but also removes whitespace from the beginning
-# of lines.
-#
-proc wapp-trim {txt} {
-  global wapp
-  regsub -all {\n\s+} [string trim $txt] \n txt
-  regsub -all {%(html|url|qp|string|unsafe)\(([^)]+)\)} $txt \
-         {[wappInt-enc-\1 "\2"]} txt
-  dict append wapp .reply [uplevel 1 [list subst -novariables $txt]]
+  return [string map {\\ \\\\ \" \\\" ' \\' < \\u003c} $s]
 }
 
 # This is a helper routine for wappInt-enc-url and wappInt-enc-qp.  It returns
@@ -589,7 +602,7 @@ proc wappInt-handle-request {chan useCgi} {
     dict set wapp SCRIPT_NAME {}
   }
   if {![dict exists $wapp PATH_INFO]} {
-    # If PATH_INFO is missing (ex: nginx) the construct it
+    # If PATH_INFO is missing (ex: nginx) then construct it
     set URI [dict get $wapp REQUEST_URI]
     set skip [string length [dict get $wapp SCRIPT_NAME]]
     dict set wapp PATH_INFO [string range $URI $skip end]
@@ -643,6 +656,9 @@ proc wappInt-handle-request {chan useCgi} {
       wapp-default
     }
   } msg]} {
+    if {[wapp-param WAPP_MODE]=="local" || [wapp-param WAPP_MODE]=="server"} {
+      puts "ERROR: $::errorInfo"
+    }
     wapp-reset
     wapp-reply-code "500 Internal Server Error"
     wapp-mimetype text/html
@@ -698,7 +714,7 @@ proc wappInt-handle-request {chan useCgi} {
   }
   puts $chan "Content-Length: [string length $reply]\r"
   puts $chan \r
-  puts $chan $reply
+  puts -nonewline $chan $reply
   flush $chan
   wappInt-close-channel $chan
 }
