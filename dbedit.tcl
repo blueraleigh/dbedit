@@ -422,6 +422,10 @@ proc wapp-default {} {
                     <th scope="row">
                         <a href="%url(/table/$tbl_name)">%html($tbl_name)</a>
                     </th>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
                 </tr>
             }
         }
