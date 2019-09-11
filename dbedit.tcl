@@ -120,7 +120,7 @@ proc dbedit-style-end {} {
 # Footer to end each page request
 proc dbedit-footer {} {
     # close the database connection at the end of each request
-    db eval COMMIT
+    if {[catch {db eval COMMIT} msg]} {}
     db close
     wapp-subst {<br class="clear"></div></body></html>}
 }
