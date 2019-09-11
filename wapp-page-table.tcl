@@ -78,8 +78,16 @@ proc wapp-page-table {} {
     wapp-subst {</tr></thead><tbody>}
     set where ""
     if {$q != ""} {
-        db eval "SELECT field FROM dbedit_searchfields WHERE tbl_name LIKE '$tbl_name'" {
-            set where [string cat $where "$field LIKE '%$q%' OR "]
+        db eval "SELECT field,op FROM dbedit_searchfields WHERE tbl_name LIKE '$tbl_name'" {
+            if {[string equal $op contains]} {
+                set where [string cat $where "$field LIKE '%$q%' OR "]
+            } elseif {[string equal $op beginswith]} {
+                set where [string cat $where "$field LIKE '$q%' OR "]
+            } elseif {[string equal $op endswith]} {
+                set where [string cat $where "$field LIKE '%$q' OR "]
+            } elseif {[string equal $op equals]} {
+                set where [string cat $where "$field LIKE '$q' OR "]
+            }
         }
         set where [string trimright $where " OR "]
     }

@@ -69,8 +69,21 @@ proc dbedit-config {} {
     db eval {
         CREATE TABLE IF NOT EXISTS dbedit_searchfields (
             tbl_name TEXT,    -- the table name
-            field    TEXT     -- the field name
-        )
+            field    TEXT,    -- the field name
+            op       TEXT     -- SQL comparison operator
+        );
+        CREATE TRIGGER IF NOT EXISTS insert_searchfields
+        AFTER INSERT ON dbedit_searchfields
+        WHEN NEW.op NOT IN ('contains', 'equals', 'beginswith', 'endswith')
+        BEGIN
+            SELECT RAISE(ROLLBACK, "Invalid value for op. Must be one of: contains, equals, beginswith, endswith");
+        END;
+        CREATE TRIGGER IF NOT EXISTS update_searchfields
+        AFTER UPDATE OF op ON dbedit_searchfields
+        WHEN NEW.op NOT IN ('contains', 'equals', 'beginswith', 'endswith')
+        BEGIN
+            SELECT RAISE(ROLLBACK, "Invalid value for op. Must be one of: contains, equals, beginswith, endswith");
+        END;
     }
     db eval {
         CREATE TABLE IF NOT EXISTS dbedit_loadhooks (
